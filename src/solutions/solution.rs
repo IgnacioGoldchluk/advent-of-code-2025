@@ -4,5 +4,5 @@ pub struct Solution {
 }
 
 pub trait Solver {
-    fn solve(self, input: String) -> Solution;
+    fn solve(&self, input: String) -> Solution;
 }

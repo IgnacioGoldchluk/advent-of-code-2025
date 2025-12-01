@@ -2,7 +2,7 @@ use crate::solutions::solution;
 
 pub struct Day0Solver;
 impl solution::Solver for Day0Solver {
-    fn solve(self, input: String) -> solution::Solution {
+    fn solve(&self, input: String) -> solution::Solution {
         let values: Vec<&str> = input.lines().collect();
         solution::Solution {
             part1: values[0].to_string(),

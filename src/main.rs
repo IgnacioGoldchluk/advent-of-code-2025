@@ -18,8 +18,9 @@ fn main() {
     let file_path = format!("inputs/day{}", args.day);
     let file_contents = fs::read_to_string(file_path).unwrap();
 
-    let solver = match args.day {
-        0 => solutions::day0::Day0Solver,
+    let solver: Box<dyn Solver> = match args.day {
+        0 => Box::new(solutions::day0::Day0Solver {}),
+        1 => Box::new(solutions::day1::Day1Solver {}),
         _ => todo!("Unreachable"),
     };
 
