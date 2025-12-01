@@ -13,7 +13,7 @@ struct State {
 pub struct Day1Solver;
 
 impl Day1Solver {
-    fn part1(&self, rotations: &Vec<Rotation>) -> State {
+    fn part1(&self, rotations: &[Rotation]) -> State {
         let start = State {
             position: 50,
             count: 0,
@@ -37,7 +37,7 @@ impl Day1Solver {
         })
     }
 
-    fn part2(&self, rotations: &Vec<Rotation>) -> State {
+    fn part2(&self, rotations: &[Rotation]) -> State {
         let start = State {
             position: 50,
             count: 0,
@@ -87,7 +87,7 @@ impl solution::Solver for Day1Solver {
 }
 
 fn rotation(value: &str) -> Rotation {
-    let rotation = value.chars().nth(0);
+    let rotation = value.chars().next();
     let value: i32 = value[1..].parse().unwrap();
 
     match rotation {
