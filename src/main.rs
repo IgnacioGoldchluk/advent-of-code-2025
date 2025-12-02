@@ -1,6 +1,7 @@
 use argh::FromArgs;
 use solutions::solution::Solver;
 use std::fs;
+use std::time::Instant;
 
 mod solutions;
 
@@ -25,7 +26,10 @@ fn main() {
         _ => todo!("Unreachable"),
     };
 
+    let now = Instant::now();
     let solution = solver.solve(&file_contents);
 
+    let elapsed = now.elapsed();
     println!("Part1: {}, Part2: {}", solution.part1, solution.part2);
+    println!("Elapsed: {:.2?}", elapsed);
 }
