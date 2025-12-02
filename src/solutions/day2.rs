@@ -83,7 +83,7 @@ fn first_invalid_id_after(number: &str, reps: usize) -> u64 {
 fn generate_invalid_id(num: u64, repetitions: usize) -> u64 {
     let step = num.ilog10() + 1;
 
-    (1 as usize..repetitions)
+    (1_usize..repetitions)
         .step_by(1)
         .fold(num, |acc, rep| acc + num * 10u64.pow(step * rep as u32))
 }
