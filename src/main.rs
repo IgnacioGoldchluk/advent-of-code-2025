@@ -21,10 +21,11 @@ fn main() {
     let solver: Box<dyn Solver> = match args.day {
         0 => Box::new(solutions::day0::Day0Solver {}),
         1 => Box::new(solutions::day1::Day1Solver {}),
+        2 => Box::new(solutions::day2::Day2Solver {}),
         _ => todo!("Unreachable"),
     };
 
-    let solution = solver.solve(file_contents);
+    let solution = solver.solve(&file_contents);
 
     println!("Part1: {}, Part2: {}", solution.part1, solution.part2);
 }

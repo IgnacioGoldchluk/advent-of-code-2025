@@ -2,7 +2,7 @@ use crate::solutions::solution;
 
 pub struct Day0Solver;
 impl solution::Solver for Day0Solver {
-    fn solve(&self, input: String) -> solution::Solution {
+    fn solve(&self, input: &str) -> solution::Solution {
         let values: Vec<&str> = input.lines().collect();
         solution::Solution {
             part1: values[0].to_string(),
@@ -18,7 +18,7 @@ mod tests {
 
     #[test]
     fn test_solve() {
-        let solution = Day0Solver.solve("1\n2".to_string());
+        let solution = Day0Solver.solve("1\n2");
         assert_eq!(solution.part1, "1");
         assert_eq!(solution.part2, "2");
     }
