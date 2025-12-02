@@ -64,19 +64,17 @@ fn invalid_ids(range: &IdRange, repetitions: usize) -> Vec<u64> {
 }
 
 fn first_invalid_id_after(number: &str, reps: usize) -> u64 {
-    // We need to start with a 1 followed by zeroes. The number
-    // of zeroes is (nl / repetitions) - 1, where `nl` is the length of the number. This
-    // is because we need repeated patterns (hence dividing by repetitions) and
-    // one of the digits is reserved for the first `1`
     let nl = number.len();
-    let length = if nl.is_multiple_of(reps) { nl } else { nl + 1 };
-    let invalid_num: u64 = ("1".to_string() + &"0".repeat(cmp::max(0, (length / reps) - 1)))
-        .parse()
-        .unwrap();
+
+    let guess: u64 = if nl.is_multiple_of(reps) {
+        number[..cmp::max(1, nl / reps)].parse().unwrap()
+    } else {
+        10u64.pow((nl / reps) as u32)
+    };
 
     let start: u64 = number.parse().unwrap();
 
-    (invalid_num..)
+    (guess..)
         .into_iter()
         .find(|n| generate_invalid_id(*n, reps) >= start)
         .unwrap()
