@@ -6,20 +6,42 @@ impl solution::Solver for Day3Solver {
     fn solve(&self, input: &str) -> solution::Solution {
         solution::Solution {
             part1: part1(input),
-            part2: "0".into(),
+            part2: part2(input),
         }
     }
 }
 
-fn part1(input: &str) -> String {
-    input.lines().map(max_joltage).sum::<u32>().to_string()
+fn part2(input: &str) -> String {
+    input
+        .lines()
+        .map(|bank| max_joltage(bank, 12))
+        .sum::<u64>()
+        .to_string()
 }
 
-fn max_joltage(bank: &str) -> u32 {
+fn part1(input: &str) -> String {
+    input
+        .lines()
+        .map(|bank| max_joltage(bank, 2))
+        .sum::<u64>()
+        .to_string()
+}
+
+fn max_joltage(bank: &str, num_batteries: u8) -> u64 {
+    match num_batteries {
+        0 => 0,
+        n => do_max_joltage(bank, n),
+    }
+}
+
+fn do_max_joltage(bank: &str, num_batteries: u8) -> u64 {
     let mut d = '0';
     let mut idx = 0;
 
-    for (i, c) in bank[0..(bank.len() - 1)].chars().enumerate() {
+    for (i, c) in bank[0..(bank.len() - (num_batteries as usize - 1))]
+        .chars()
+        .enumerate()
+    {
         if c == '9' {
             d = c;
             idx = i;
@@ -30,8 +52,9 @@ fn max_joltage(bank: &str) -> u32 {
             idx = i;
         }
     }
-    let u = bank[idx + 1..].chars().max().unwrap();
-    d.to_digit(10).unwrap() * 10 + u.to_digit(10).unwrap()
+
+    d.to_digit(10).unwrap() as u64 * 10u64.pow(num_batteries as u32 - 1)
+        + max_joltage(&bank[idx + 1..], num_batteries - 1)
 }
 
 #[cfg(test)]
@@ -49,6 +72,6 @@ mod tests {
 
         let solution = Day3Solver.solve(input);
         assert_eq!(solution.part1, "357");
-        assert_eq!(solution.part2, "0");
+        assert_eq!(solution.part2, "3121910778619");
     }
 }
