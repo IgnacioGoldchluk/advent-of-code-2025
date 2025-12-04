@@ -1,16 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashSet, hash::Hash};
 
 use crate::solutions::solution;
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 struct Point(i64, i64);
-
-enum PointValue {
-    Empty,
-    PaperRoll,
-}
-
-type Grid = HashMap<Point, PointValue>;
 
 pub struct Day4Solver;
 
@@ -18,28 +11,47 @@ impl solution::Solver for Day4Solver {
     fn solve(&self, input: &str) -> solution::Solution {
         solution::Solution {
             part1: part1(input).to_string(),
-            part2: "".into(),
+            part2: part2(input).to_string(),
         }
     }
 }
 
+fn part2(input: &str) -> usize {
+    let mut points = get_rolls_points(input);
+    let initial_size = points.len();
+
+    loop {
+        let to_remove = points
+            .iter()
+            .filter(|p| can_remove(p, &points))
+            .cloned()
+            .collect::<HashSet<Point>>();
+
+        if to_remove.is_empty() {
+            break;
+        }
+
+        for p in to_remove {
+            points.remove(&p);
+        }
+    }
+
+    initial_size - points.len()
+}
+
 fn part1(input: &str) -> usize {
-    let rolls_grid = grid(input);
-
-    rolls_grid
-        .keys()
-        .filter(|point| is_roll(point, &rolls_grid) && adjacent_rolls(point, &rolls_grid) < 4)
-        .count()
+    let points = get_rolls_points(input);
+    points.iter().filter(|p| can_remove(p, &points)).count()
 }
 
-fn is_roll(point: &Point, grid: &Grid) -> bool {
-    matches!(grid.get(point), Some(PointValue::PaperRoll))
+fn can_remove(point: &Point, points: &HashSet<Point>) -> bool {
+    adjacent_rolls(point, points) < 4
 }
 
-fn adjacent_rolls(point: &Point, grid: &Grid) -> usize {
+fn adjacent_rolls(point: &Point, rolls_points: &HashSet<Point>) -> usize {
     adjacent_points(point)
         .iter()
-        .filter(|p| is_roll(p, grid))
+        .filter(|p| rolls_points.contains(p))
         .count()
 }
 
@@ -57,23 +69,16 @@ fn adjacent_points(point: &Point) -> Vec<Point> {
     result
 }
 
-fn point_value(c: char) -> PointValue {
-    match c {
-        '.' => PointValue::Empty,
-        '@' => PointValue::PaperRoll,
-        _ => panic!("Unexpected character: {c}"),
-    }
-}
-
-fn grid(input: &str) -> Grid {
+fn get_rolls_points(input: &str) -> HashSet<Point> {
     input
         .lines()
         .enumerate()
-        .flat_map(|(row, line)| {
-            line.char_indices()
-                .map(move |(col, c)| (Point(row as i64, col as i64), point_value(c)))
+        .flat_map(|(row, l)| {
+            l.char_indices()
+                .map(move |(col, c)| (Point(row as i64, col as i64), c))
         })
-        .collect::<Grid>()
+        .filter_map(|(p, c)| if c == '@' { Some(p) } else { None })
+        .collect::<HashSet<Point>>()
 }
 
 #[cfg(test)]
@@ -97,5 +102,6 @@ mod tests {
 
         let solution = Day4Solver.solve(input);
         assert_eq!(solution.part1, "13");
+        assert_eq!(solution.part2, "43");
     }
 }
