@@ -19,9 +19,10 @@ impl solution::Solver for Day4Solver {
 fn part2(input: &str) -> usize {
     let mut points = get_rolls_points(input);
     let initial_size = points.len();
+    let mut to_check = points.iter().cloned().collect::<HashSet<Point>>();
 
     loop {
-        let to_remove = points
+        let to_remove = to_check
             .iter()
             .filter(|p| can_remove(p, &points))
             .cloned()
@@ -31,8 +32,17 @@ fn part2(input: &str) -> usize {
             break;
         }
 
+        to_remove.iter().for_each(|p| {
+            points.remove(p);
+        });
+
+        to_check.clear();
         for p in to_remove {
-            points.remove(&p);
+            for a in adjacent_points(&p) {
+                if points.contains(&a) {
+                    to_check.insert(a);
+                }
+            }
         }
     }
 
