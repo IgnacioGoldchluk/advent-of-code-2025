@@ -39,12 +39,10 @@ fn part2(input: &str) -> u64 {
 
     let mut operands = input
         .lines()
-        .rev()
-        .next()
+        .next_back()
         .unwrap()
         .split_whitespace()
-        .map(to_operation)
-        .into_iter();
+        .map(to_operation);
 
     let mut total = 0;
     let mut nums: Vec<u64> = Vec::new();
@@ -53,22 +51,16 @@ fn part2(input: &str) -> u64 {
         let n: String = lines.iter().map(|l| l[col]).collect();
 
         if n.trim() == "" {
-            let func = match operands.next().unwrap() {
-                Op::Add => |x, y| x + y,
-                Op::Mul => |x, y| x * y,
-            };
-            total += nums.clone().into_iter().reduce(func).unwrap();
+            let op = operands.next().unwrap();
+            total += nums.clone().into_iter().reduce(get_func(&op)).unwrap();
             nums.clear();
         } else {
             nums.push(n.trim().parse().unwrap());
         }
     }
 
-    let func = match operands.next().unwrap() {
-        Op::Add => |x, y| x + y,
-        Op::Mul => |x, y| x * y,
-    };
-    total + nums.clone().into_iter().reduce(func).unwrap()
+    let op = operands.next().unwrap();
+    total + nums.clone().into_iter().reduce(get_func(&op)).unwrap()
 }
 
 fn get_func(operator: &Op) -> impl Fn(u64, u64) -> u64 {
