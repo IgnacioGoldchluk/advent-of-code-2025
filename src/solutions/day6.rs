@@ -6,7 +6,7 @@ impl solution::Solver for Day6Solver {
     fn solve(&self, input: &str) -> solution::Solution {
         solution::Solution {
             part1: part1(input).to_string(),
-            part2: "".into(),
+            part2: part2(input).to_string(),
         }
     }
 }
@@ -20,19 +20,62 @@ enum Op {
 fn part1(input: &str) -> u64 {
     let (numbers, operators) = parse(input);
 
-    let add = |x, y| x + y;
-    let mul = |x, y| x * y;
-
     (0..numbers[0].len())
         .map(|col| {
-            let operation = match operators[col] {
-                Op::Add => add,
-                Op::Mul => mul,
-            };
-
+            let operation = get_func(&operators[col]);
             numbers.iter().map(|n| n[col]).reduce(operation).unwrap()
         })
         .sum()
+}
+
+fn part2(input: &str) -> u64 {
+    let lines: Vec<Vec<char>> = {
+        let lines: Vec<&str> = input.lines().collect();
+        lines[..lines.len() - 1]
+            .iter()
+            .map(|s| s.chars().collect())
+            .collect()
+    };
+
+    let mut operands = input
+        .lines()
+        .rev()
+        .next()
+        .unwrap()
+        .split_whitespace()
+        .map(to_operation)
+        .into_iter();
+
+    let mut total = 0;
+    let mut nums: Vec<u64> = Vec::new();
+
+    for col in 0..lines[0].len() {
+        let n: String = lines.iter().map(|l| l[col]).collect();
+
+        if n.trim() == "" {
+            let func = match operands.next().unwrap() {
+                Op::Add => |x, y| x + y,
+                Op::Mul => |x, y| x * y,
+            };
+            total += nums.clone().into_iter().reduce(func).unwrap();
+            nums.clear();
+        } else {
+            nums.push(n.trim().parse().unwrap());
+        }
+    }
+
+    let func = match operands.next().unwrap() {
+        Op::Add => |x, y| x + y,
+        Op::Mul => |x, y| x * y,
+    };
+    total + nums.clone().into_iter().reduce(func).unwrap()
+}
+
+fn get_func(operator: &Op) -> impl Fn(u64, u64) -> u64 {
+    match operator {
+        Op::Add => |x, y| x + y,
+        Op::Mul => |x, y| x * y,
+    }
 }
 
 fn parse(input: &str) -> (Vec<Vec<u64>>, Vec<Op>) {
