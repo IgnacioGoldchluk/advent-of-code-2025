@@ -11,7 +11,7 @@ impl solution::Solver for Day7Solver {
     fn solve(&self, input: &str) -> solution::Solution {
         solution::Solution {
             part1: part1(input).to_string(),
-            part2: "".into(),
+            part2: part2(input).to_string(),
         }
     }
 }
@@ -25,6 +25,37 @@ enum Point {
 type Coord = (usize, usize);
 type Grid = HashMap<Coord, Point>;
 
+fn part2(input: &str) -> u64 {
+    let grid = parse(input);
+    let mut results = HashMap::new();
+
+    let (rows, cols) = grid.keys().max().unwrap();
+
+    for row in (0..=*rows).rev() {
+        for col in (0..=*cols).rev() {
+            if row == *rows {
+                results.insert((row, col), 1);
+            } else {
+                match grid.get(&(row, col)) {
+                    None => (),
+                    Some(Point::Space) | Some(Point::Beam) => {
+                        let prev = results.get(&(row + 1, col)).unwrap();
+                        results.insert((row, col), *prev);
+                    }
+                    Some(Point::Splitter) => {
+                        let p1 = results.get(&(row + 1, col - 1)).unwrap();
+                        let p2 = results.get(&(row + 1, col + 1)).unwrap();
+                        results.insert((row, col), p1 + p2);
+                    }
+                }
+            }
+        }
+    }
+
+    let beam_point = find_beam(&grid);
+    *results.get(&beam_point).unwrap()
+}
+
 fn part1(input: &str) -> u64 {
     let grid = parse(input);
 
@@ -35,26 +66,22 @@ fn part1(input: &str) -> u64 {
 
     while !beams.is_empty() {
         let beam_point = beams.pop_front().unwrap();
+        if seen.contains(&beam_point) {
+            continue;
+        }
         seen.insert(beam_point);
         let next_point = (beam_point.0 + 1, beam_point.1);
         match grid.get(&next_point) {
             None => (),
             Some(Point::Beam) => panic!("Unexpected beam"),
             Some(Point::Space) => {
-                if !seen.contains(&next_point) {
-                    beams.push_back(next_point);
-                    seen.insert(next_point);
-                }
+                beams.push_back(next_point);
             }
             Some(Point::Splitter) => {
                 splits += 1;
                 let (left, right) = split_point(&next_point);
-                for p in [left, right] {
-                    if !seen.contains(&p) {
-                        beams.push_back(p);
-                        seen.insert(p);
-                    }
-                }
+                beams.push_back(left);
+                beams.push_back(right);
             }
         }
     }
@@ -124,5 +151,6 @@ mod tests {
 ..............."#;
         let solution = Day7Solver.solve(input);
         assert_eq!(solution.part1, "21");
+        assert_eq!(solution.part2, "40");
     }
 }
