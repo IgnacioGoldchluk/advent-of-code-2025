@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     fmt::Error,
 };
 
@@ -29,27 +29,32 @@ fn part1(input: &str) -> u64 {
     let grid = parse(input);
 
     let initial_beam = find_beam(&grid);
-    let mut beams = HashSet::from([initial_beam]);
+    let mut seen = HashSet::new();
+    let mut beams = VecDeque::from([initial_beam]);
     let mut splits = 0;
 
     while !beams.is_empty() {
-        // Get the first element by x,y coordinate
-        let mut p: Vec<&Coord> = beams.iter().collect();
-        p.sort();
-        let beam_point = *p[0];
-        beams.remove(&beam_point);
+        let beam_point = beams.pop_front().unwrap();
+        seen.insert(beam_point);
         let next_point = (beam_point.0 + 1, beam_point.1);
         match grid.get(&next_point) {
             None => (),
             Some(Point::Beam) => panic!("Unexpected beam"),
             Some(Point::Space) => {
-                beams.insert(next_point);
+                if !seen.contains(&next_point) {
+                    beams.push_back(next_point);
+                    seen.insert(next_point);
+                }
             }
             Some(Point::Splitter) => {
                 splits += 1;
                 let (left, right) = split_point(&next_point);
-                beams.insert(left);
-                beams.insert(right);
+                for p in [left, right] {
+                    if !seen.contains(&p) {
+                        beams.push_back(p);
+                        seen.insert(p);
+                    }
+                }
             }
         }
     }
