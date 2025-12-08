@@ -22,57 +22,39 @@ fn part2(input: &str) -> u64 {
     let target = points.len() - 1;
 
     let distances = sorted_distances(get_distances(&points));
+    let mut connections = UnionFind::new(points.len());
 
-    let mut circuit: Vec<usize> = (0..points.len()).collect();
-
-    let mut connections = 0;
+    let mut connection_count = 0;
     for (i, j) in distances.iter() {
-        if find(*i, &mut circuit) != find(*j, &mut circuit) {
-            connections += 1;
-            if connections == target {
+        if connections.find(*i) != connections.find(*j) {
+            connection_count += 1;
+            if connection_count == target {
                 return (points[*i].0 * points[*j].0) as u64;
             }
-            connect(*i, *j, &mut circuit);
+            connections.connect(*i, *j);
         }
     }
-
     panic!("Unreachable");
 }
 
 fn part1(input: &str) -> u64 {
     let points = parse(input);
     let distances = sorted_distances(get_distances(&points));
-    let mut circuit: Vec<usize> = (0..points.len()).collect();
+    let mut connections = UnionFind::new(points.len());
 
     for (i, j) in distances.iter().take(top_circuits()) {
-        connect(*i, *j, &mut circuit);
+        connections.connect(*i, *j);
     }
 
-    let mut sz: HashMap<usize, u64> = HashMap::new();
-
+    let mut freqs: HashMap<usize, u64> = HashMap::new();
     for idx in 0..points.len() {
-        *sz.entry(find(idx, &mut circuit)).or_default() += 1;
+        *freqs.entry(connections.find(idx)).or_default() += 1;
     }
 
-    let mut v: Vec<u64> = sz.values().copied().collect();
+    let mut v: Vec<u64> = freqs.values().copied().collect();
     v.sort();
     v.reverse();
-
-    v[0] * v[1] * v[2]
-}
-
-fn find(idx: usize, circuit: &mut Vec<usize>) -> usize {
-    if idx == circuit[idx] {
-        return idx;
-    }
-    circuit[idx] = find(circuit[idx], circuit);
-    circuit[idx]
-}
-
-fn connect(i: usize, j: usize, circuit: &mut Vec<usize>) {
-    let value = find(j, circuit);
-    let idx = find(i, circuit);
-    circuit[idx] = value;
+    v.iter().take(3).product()
 }
 
 fn sorted_distances(distances: Distances) -> Vec<(usize, usize)> {
@@ -109,6 +91,32 @@ impl From<&str> for Point {
             [x, y, z] => Self(*x, *y, *z),
             _ => panic!("Expected length 3 array"),
         }
+    }
+}
+
+struct UnionFind {
+    indexes: Vec<usize>,
+}
+
+impl UnionFind {
+    fn new(capacity: usize) -> Self {
+        Self {
+            indexes: (0..capacity + 1).collect(),
+        }
+    }
+
+    fn find(&mut self, idx: usize) -> usize {
+        if idx == self.indexes[idx] {
+            return idx;
+        }
+        self.indexes[idx] = self.find(self.indexes[idx]);
+        self.indexes[idx]
+    }
+
+    fn connect(&mut self, i: usize, j: usize) {
+        let value = self.find(j);
+        let idx = self.find(i);
+        self.indexes[idx] = value;
     }
 }
 
