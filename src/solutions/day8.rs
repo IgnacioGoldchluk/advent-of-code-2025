@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::HashMap;
 
 use crate::solutions::solution;
 
@@ -8,74 +8,85 @@ impl solution::Solver for Day8Solver {
     fn solve(&self, input: &str) -> solution::Solution {
         solution::Solution {
             part1: part1(input).to_string(),
-            part2: "".into(),
+            part2: part2(input).to_string(),
         }
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 struct Point(i64, i64, i64);
 
-type Distances = HashMap<(Point, Point), i64>;
-type Graph = HashMap<Point, HashSet<Point>>;
+type Distances = HashMap<(usize, usize), i64>;
+
+fn part2(input: &str) -> u64 {
+    let points = parse(input);
+    let target = points.len() - 1;
+
+    let distances = sorted_distances(get_distances(&points));
+
+    let mut circuit: Vec<usize> = (0..points.len()).collect();
+
+    let mut connections = 0;
+    for (i, j) in distances.iter() {
+        if find(*i, &mut circuit) != find(*j, &mut circuit) {
+            connections += 1;
+            if connections == target {
+                return (points[*i].0 * points[*j].0) as u64;
+            }
+            connect(*i, *j, &mut circuit);
+        }
+    }
+
+    panic!("Unreachable");
+}
 
 fn part1(input: &str) -> u64 {
     let points = parse(input);
-    let graph = build_graph(&sorted_distances(get_distances(&points)));
+    let distances = sorted_distances(get_distances(&points));
+    let mut circuit: Vec<usize> = (0..points.len()).collect();
 
-    let mut lengths: Vec<usize> = vec![];
-    let mut seen: HashSet<Point> = HashSet::new();
-
-    for point in graph.keys() {
-        let mut total = 0;
-        let mut to_visit = VecDeque::from([point]);
-
-        while !to_visit.is_empty() {
-            let new_point = to_visit.pop_front().unwrap();
-            if seen.contains(new_point) {
-                continue;
-            }
-            seen.insert(new_point.clone());
-            total += 1;
-            for p in graph.get(new_point).unwrap().iter() {
-                to_visit.push_back(p);
-            }
-        }
-
-        lengths.push(total);
+    for (i, j) in distances.iter().take(top_circuits()) {
+        connect(*i, *j, &mut circuit);
     }
 
-    lengths.sort();
-    lengths.reverse();
-    (lengths[0] * lengths[1] * lengths[2]) as u64
-}
+    let mut sz: HashMap<usize, u64> = HashMap::new();
 
-fn build_graph(connections: &[(Point, Point)]) -> Graph {
-    let mut graph: Graph = HashMap::new();
-
-    for (p1, p2) in connections.iter() {
-        graph.entry(p1.clone()).or_default().insert(p2.clone());
-        graph.entry(p2.clone()).or_default().insert(p1.clone());
+    for idx in 0..points.len() {
+        *sz.entry(find(idx, &mut circuit)).or_default() += 1;
     }
 
-    graph
+    let mut v: Vec<u64> = sz.values().copied().collect();
+    v.sort();
+    v.reverse();
+
+    v[0] * v[1] * v[2]
 }
 
-fn sorted_distances(distances: Distances) -> Vec<(Point, Point)> {
-    let mut d: Vec<((Point, Point), i64)> = distances.into_iter().collect();
+fn find(idx: usize, circuit: &mut Vec<usize>) -> usize {
+    if idx == circuit[idx] {
+        return idx;
+    }
+    circuit[idx] = find(circuit[idx], circuit);
+    circuit[idx]
+}
+
+fn connect(i: usize, j: usize, circuit: &mut Vec<usize>) {
+    let value = find(j, circuit);
+    let idx = find(i, circuit);
+    circuit[idx] = value;
+}
+
+fn sorted_distances(distances: Distances) -> Vec<(usize, usize)> {
+    let mut d: Vec<((usize, usize), i64)> = distances.into_iter().collect();
     d.sort_by(|(_points1, d1), (_points2, d2)| d1.cmp(d2));
-    d.into_iter()
-        .map(|(points, _distance)| points)
-        .take(top_circuits())
-        .collect()
+    d.into_iter().map(|(points, _distance)| points).collect()
 }
 
 fn get_distances(points: &[Point]) -> Distances {
     let mut distances: Distances = HashMap::new();
 
     for (i, p1) in points.iter().enumerate() {
-        for p2 in points[i + 1..].iter() {
-            distances.insert((p1.clone(), p2.clone()), p1.distance(p2));
+        for (j, p2) in points[i + 1..].iter().enumerate() {
+            distances.insert((i, j + i + 1), p1.distance(p2));
         }
     }
     distances
@@ -94,7 +105,6 @@ impl Point {
 impl From<&str> for Point {
     fn from(value: &str) -> Self {
         let nums: Vec<i64> = value.split(",").map(|n| n.parse().unwrap()).collect();
-
         match nums.as_slice() {
             [x, y, z] => Self(*x, *y, *z),
             _ => panic!("Expected length 3 array"),
@@ -136,5 +146,6 @@ mod tests {
 
         let solution = Day8Solver.solve(input);
         assert_eq!(solution.part1, "40");
+        assert_eq!(solution.part2, "25272");
     }
 }
