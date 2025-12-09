@@ -24,15 +24,13 @@ fn part2(input: &str) -> u64 {
                 let c2 = &coords[(i + 1) % length];
 
                 if c1.0 == c2.0 {
-                    // Horizontal line,
                     let (ylmin, ylmax) = (c1.1.min(c2.1), c1.1.max(c2.1));
-                    if xmin < c1.0 && xmax > c1.0 && ymin < ylmax && ymax > ylmin {
+                    if xmin < c1.0 && xmax > c1.0 && !(ymin >= ylmax || ymax <= ylmin) {
                         return false;
                     }
                 } else if c1.1 == c2.1 {
-                    // Vertical line
                     let (xlmin, xlmax) = (c1.0.min(c2.0), c1.0.max(c2.0));
-                    if ymin < c1.1 && ymax > c1.1 && xmin < xlmax && xmax > xlmin {
+                    if ymin < c1.1 && ymax > c1.1 && !(xmin >= xlmax || xmax <= xlmin) {
                         return false;
                     }
                 } else {
@@ -81,7 +79,7 @@ fn rectangles(coords: &[Coord]) -> Vec<(Coord, Coord)> {
     pairs
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Clone)]
 struct Coord(u64, u64);
 
 impl From<&str> for Coord {
