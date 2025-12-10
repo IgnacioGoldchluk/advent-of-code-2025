@@ -30,6 +30,7 @@ fn main() {
         7 => Box::new(solutions::day7::Day7Solver {}),
         8 => Box::new(solutions::day8::Day8Solver {}),
         9 => Box::new(solutions::day9::Day9Solver {}),
+        10 => Box::new(solutions::day10::Day10Solver {}),
         _ => todo!("Unreachable"),
     };
 
