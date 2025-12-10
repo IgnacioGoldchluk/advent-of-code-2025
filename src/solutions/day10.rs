@@ -1,4 +1,5 @@
 use std::collections::{HashSet, VecDeque};
+use z3::{Optimize, SatResult, ast::Int};
 
 use crate::solutions::solution;
 
@@ -15,25 +16,16 @@ impl solution::Solver for Day10Solver {
 
 fn part2(input: &str) -> u64 {
     let machines: Vec<Machine> = input.lines().map(Machine::from).collect();
-
-    machines.iter().map(fewest_joltages).sum()
+    machines.iter().map(fewest_joltages_min).sum()
 }
 
 fn part1(input: &str) -> u64 {
     let machines: Vec<Machine> = input.lines().map(Machine::from).collect();
-
     machines.iter().map(fewest_presses).sum()
 }
 
-fn fewest_joltages(machine: &Machine) -> u64 {
-    let joltages = &machine.joltages;
-    let btn_positions: Vec<Vec<u64>> = machine.buttons.iter().map(|b| positions(*b)).collect();
-
-    123
-}
-
-fn positions(button: u64) -> Vec<u64> {
-    let mut b = button.clone();
+fn positions(button: u64) -> Vec<usize> {
+    let mut b = button;
     let mut res = vec![];
     let mut pos = 0;
 
@@ -46,6 +38,44 @@ fn positions(button: u64) -> Vec<u64> {
     }
 
     res
+}
+
+fn fewest_joltages_min(machine: &Machine) -> u64 {
+    let joltages = &machine.joltages;
+    let buttons: Vec<Vec<usize>> = machine.buttons.iter().map(|b| positions(*b)).collect();
+
+    let opt = Optimize::new();
+    let total_presses = Int::fresh_const("total_presses");
+
+    let button_presses: Vec<Int> = (0..buttons.len())
+        .map(|i| Int::fresh_const(&format!("button_{i}")))
+        .collect();
+
+    button_presses.iter().for_each(|b| opt.assert(&b.ge(0)));
+    for (pos, &target) in joltages.iter().enumerate() {
+        let mut terms = Vec::new();
+
+        for (i, btn) in buttons.iter().enumerate() {
+            if btn.contains(&pos) {
+                terms.push(button_presses[i].clone());
+            }
+        }
+        let sum = Int::add(&terms.iter().collect::<Vec<&Int>>());
+        opt.assert(&sum.eq(Int::from_u64(target as u64)));
+    }
+
+    opt.assert(&total_presses.eq(Int::add(&button_presses)));
+    opt.minimize(&total_presses);
+
+    match opt.check(&[]) {
+        SatResult::Sat => opt
+            .get_model()
+            .unwrap()
+            .eval(&total_presses, true)
+            .and_then(|t| t.as_u64())
+            .unwrap(),
+        _ => panic!("No solution found"),
+    }
 }
 
 fn fewest_presses(machine: &Machine) -> u64 {
@@ -70,13 +100,13 @@ fn fewest_presses(machine: &Machine) -> u64 {
             }
         });
     }
-    panic!();
+    panic!("No solution found");
 }
 
 struct Machine {
     target: u64,
     buttons: Vec<u64>,
-    joltages: Vec<u64>,
+    joltages: Vec<i64>,
 }
 
 impl From<&str> for Machine {
@@ -100,7 +130,7 @@ fn parse_target(target: &str) -> u64 {
     })
 }
 
-fn parse_joltages(jolt: &str) -> Vec<u64> {
+fn parse_joltages(jolt: &str) -> Vec<i64> {
     let n = jolt.strip_prefix("{").unwrap().strip_suffix("}").unwrap();
     n.split(",").map(|num| num.parse().unwrap()).collect()
 }
@@ -130,6 +160,6 @@ mod tests {
 
         let solution = Day10Solver.solve(input);
         assert_eq!(solution.part1, "7");
-        assert_eq!(solution.part2, "")
+        assert_eq!(solution.part2, "33")
     }
 }
