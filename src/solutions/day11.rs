@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-
 use crate::solutions::solution;
 
 pub struct Day11Solver;
@@ -13,63 +11,53 @@ impl solution::Solver for Day11Solver {
     }
 }
 
+use std::collections::{HashMap, HashSet};
+type Nodes = HashMap<u32, HashSet<u32>>;
+
+fn paths(nodes: &Nodes, in_node: u32, out_node: u32, cache: &mut HashMap<u32, u64>) -> u64 {
+    if in_node == out_node {
+        return 1;
+    }
+    match cache.get(&in_node) {
+        Some(val) => *val,
+        None => {
+            let total = nodes
+                .get(&in_node)
+                .unwrap_or(&HashSet::new())
+                .iter()
+                .fold(0, |acc, node| acc + paths(nodes, *node, out_node, cache));
+            cache.insert(in_node, total);
+            total
+        }
+    }
+}
+
 fn part2(input: &str) -> u64 {
     let nodes = parse(input);
 
-    let in_node = to_number("svr");
-    let out_node = to_number("out");
-    let dac = to_number("dac");
+    let svr = to_number("svr");
     let fft = to_number("fft");
+    let dac = to_number("dac");
+    let out = to_number("out");
 
-    let mut total = 0;
-    let mut queue: VecDeque<(HashSet<u32>, u32)> = VecDeque::from([(HashSet::new(), in_node)]);
+    let p1 = paths(&nodes, svr, fft, &mut HashMap::new())
+        * paths(&nodes, fft, dac, &mut HashMap::new())
+        * paths(&nodes, dac, out, &mut HashMap::new());
 
-    while let Some((seen, node)) = queue.pop_front() {
-        if seen.contains(&node) {
-            continue;
-        }
-        if node == out_node {
-            if seen.contains(&dac) && seen.contains(&fft) {
-                total += 1;
-            }
-            continue;
-        }
-        for out in nodes.get(&node).unwrap_or(&HashSet::new()) {
-            let mut seen_copy = seen.clone();
-            seen_copy.insert(node);
-            queue.push_back((seen_copy, *out));
-        }
-    }
-    total
+    let p2 = paths(&nodes, svr, dac, &mut HashMap::new())
+        * paths(&nodes, dac, fft, &mut HashMap::new())
+        * paths(&nodes, fft, out, &mut HashMap::new());
+
+    p1 + p2
 }
 
 fn part1(input: &str) -> u64 {
     let nodes = parse(input);
-
-    let in_node = to_number("you");
-    let out_node = to_number("out");
-
-    let mut total = 0;
-    let mut queue: VecDeque<(HashSet<u32>, u32)> = VecDeque::from([(HashSet::new(), in_node)]);
-
-    while let Some((seen, node)) = queue.pop_front() {
-        if seen.contains(&node) {
-            continue;
-        }
-        if node == out_node {
-            total += 1;
-            continue;
-        }
-        for out in nodes.get(&node).unwrap_or(&HashSet::new()) {
-            let mut seen_copy = seen.clone();
-            seen_copy.insert(node);
-            queue.push_back((seen_copy, *out));
-        }
-    }
-    total
+    let (you, out) = (to_number("you"), to_number("out"));
+    paths(&nodes, you, out, &mut HashMap::new())
 }
 
-fn parse(input: &str) -> HashMap<u32, HashSet<u32>> {
+fn parse(input: &str) -> Nodes {
     input
         .lines()
         .map(|line| {
