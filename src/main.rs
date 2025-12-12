@@ -32,7 +32,8 @@ fn main() {
         9 => Box::new(solutions::day9::Day9Solver {}),
         10 => Box::new(solutions::day10::Day10Solver {}),
         11 => Box::new(solutions::day11::Day11Solver {}),
-        _ => todo!("Unreachable"),
+        12 => Box::new(solutions::day12::Day12Solver {}),
+        _ => panic!("Valid days are 1-12"),
     };
 
     let now = Instant::now();

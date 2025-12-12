@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 argh = "0.1.13"
+regex = "1.12.2"
 z3 = "0.19.5"
